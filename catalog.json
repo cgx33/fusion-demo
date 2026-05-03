@@ -20,8 +20,9 @@
           "short_description": "Program the Fusion bitstream into QSPI flash via Quartus Programmer (~5 min, one-time per board).",
           "instructions_path": "nano25/setup/firmware/README.md",
           "release_tag": "setup-firmware-v0.1",
-          "filename": "golden_top_hps.jic",
-          "size_kb": 16384,
+          "filename": "setup-firmware-v0.1.zip",
+          "size_kb": 4957,
+          "bundle_contents": ["README.md", "golden_top_hps.jic", "program_qspi_flash/flash_program.bat", "program_qspi_flash/flash_erase.bat"],
           "fusion_sdk": "v4.0.3.22",
           "tools_required": ["Quartus Prime Pro v25.1.1+", "USB Blaster III"]
         },

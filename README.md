@@ -1,67 +1,141 @@
-# Fusion Demos
+# fusion-demo
 
-Pre-built Fusion graphics demos for evaluation on Coregraphix
-hardware. Customer-facing distribution: download bitstream + SD image
-to provision a Fusion-capable board, then iterate via single-ELF
-demos.
+**Backend repository for [fusion.coregraphix.com](https://fusion.coregraphix.com) demo distribution.**
 
-## Repository layout
+This repo is not the customer destination. Customers evaluate Fusion
+on the **Coregraphix website**, which renders the catalog from this
+repo's `catalog.json` and links download buttons to this repo's
+**GitHub Releases**.
+
+```
+Customer  →  fusion.coregraphix.com  →  click "Download"  →  GitHub Release URL  →  file
+                       ↑
+                  fetches catalog.json + READMEs
+                       ↑
+              this repo (cgx33/fusion-demo)
+```
+
+If you are a **customer / evaluator**, you do not need to clone this
+repo. Visit the website and follow the on-page instructions.
+
+If you are an **internal contributor / partner / curious developer**,
+read on.
+
+---
+
+## What this repo holds
+
+| Path | Purpose | Consumed by |
+|---|---|---|
+| `catalog.json` | Master index of available setup assets + demos | Website (live fetch) |
+| `nano25/setup/`, `nano25/catalog/` | Per-asset folders (README + metadata + bundle sources) | Website (READMEs fetched), team (source of truth) |
+| `nano25/vendor/` | Vendor hardware documentation (Terasic) | Customers via website link |
+
+Heavy binaries (`.jic`, `.img.gz`, `.elf`, `.zip`) are **not committed
+to git**. They are distributed as **GitHub Release assets** attached
+to a tag matching the asset's version. See `.gitignore` for the list.
+
+## Repo structure
 
 ```
 fusion-demo/
 ├── README.md                   ← this file
-├── catalog.json                ← master index (consumed by the website)
+├── catalog.json                ← master index (fetched by the website)
+├── .gitignore                  ← excludes binary assets (live in Releases)
 └── <target>/                   ← per-target content (currently: nano25/)
-    ├── README.md               ← target-specific landing
+    ├── README.md               ← target landing (rendered on github.com)
     ├── vendor/                 ← vendor hardware documentation
     ├── setup/                  ← Tier 1: one-time provisioning
-    │   ├── README.md           ← 2-step procedure (HW + SW)
+    │   ├── README.md
     │   ├── firmware/           ← Step 1: FPGA bitstream + Quartus scripts
+    │   │   ├── README.md
+    │   │   ├── golden_top_hps.jic                  (gitignored, Release asset)
+    │   │   ├── program_qspi_flash/*.bat
+    │   │   └── setup-firmware-v0.1.zip             (gitignored, Release asset)
     │   └── sdcard/             ← Step 2: Linux + Fusion image
-    └── catalog/                ← Tier 2: additional demos (single ELF each)
+    │       ├── README.md
+    │       └── nano25-fusion.img.gz                (gitignored, Release asset)
+    └── catalog/                ← Tier 2: additional ELF demos
         ├── README.md
         └── <demo>-v<x.y>/
-            ├── README.md
-            └── manifest.json
+            ├── README.md       ← rendered on the website
+            ├── manifest.json
+            └── <demo>.elf      (gitignored, Release asset)
 ```
 
-Heavy binaries (`.jic`, `.img.gz`, `.elf`) are not committed to git;
-they are distributed as **GitHub Release assets** attached to a tag
-matching the asset's version. See each per-asset README for the
-download location.
+## Customer-facing tiers (rendered on the website)
 
-## Customer journey
-
-| Tier | What | Time |
+| Tier | What | Where |
 |---|---|---|
-| 0 | Watch a video on the Coregraphix website | 30 sec |
-| 1 | Provision your Nano25 (FPGA bitstream + Linux SD image) | ~20 min |
-| 2 | Drop additional ELF demos on the provisioned Nano25 | 5 min/demo |
-| 3 | Download the SDK Starter and develop your own UI | 1 h |
+| 0 | Watch a video | Website home page |
+| 1 | Provision your Nano25 (FPGA + Linux SD) | `<target>/setup/` |
+| 2 | Drop additional ELF demos | `<target>/catalog/` |
+| 3 | Download the SDK Starter | [`fusion-release`](https://github.com/cgx33/fusion-release) |
 
-This repository hosts Tier 1 (`<target>/setup/`) and Tier 2
-(`<target>/catalog/`).
-Tier 0 (videos) lives on the Coregraphix website.
-Tier 3 (SDK) lives in the
-[`fusion-release`](https://github.com/cgx33/fusion-release) repository.
+Tier 0 lives on the website only.
+Tier 3 lives in a separate repository.
+Tiers 1 + 2 are this repo.
 
-## How to use this repository
+## How the website consumes this repo
 
-- **As a customer**: Browse [`nano25/setup/`](nano25/setup/) to provision
-  your board, then browse [`nano25/catalog/`](nano25/catalog/) for
-  additional demos. Each entry's README has step-by-step instructions
-  and a link to the corresponding GitHub Release for the binary.
-- **As the website**: Fetch
-  [`catalog.json`](catalog.json) at runtime and render cards from it.
-- **Adding a demo**: Create `<target>/catalog/<demo>-v<x.y>/` with a
-  README + manifest.json, add an entry to `catalog.json`, then tag
-  and create a GitHub Release with the ELF as an asset.
+1. The React app fetches `catalog.json` from
+   `https://raw.githubusercontent.com/cgx33/fusion-demo/main/catalog.json`
+2. For each asset, it computes a download URL from the
+   `release_url_template` field in catalog.json + the asset's
+   `release_tag` and `filename`
+3. For READMEs / instructions, it fetches the markdown via
+   `https://raw.githubusercontent.com/cgx33/fusion-demo/main/<path>`
+   and renders it inline
 
-## Asset distribution model
+This repo's only public-facing role is to feed those fetches. The
+website is the customer destination.
 
-| File type | Location | Reason |
-|---|---|---|
-| Source files (READMEs, JSON, scripts) | Tracked in git | Small, version-controlled, browsable |
-| `golden_top_hps.jic` (~16 MB) | GitHub Release asset | Versioning per setup release |
-| `nano25-fusion.img.gz` (~1.4 GB) | GitHub Release asset | Exceeds git size limits |
-| Demo `.elf` (~1.6 MB each) | GitHub Release asset | Versioning per demo release |
+## How to add or update content
+
+### Add a new demo (Tier 2)
+
+1. Build the demo binary from the Fusion SDK in release / archive-linkage
+   mode
+2. Strip the binary
+3. Create `<target>/catalog/<demo>-v<x.y>/` with `README.md` and
+   `manifest.json` (committed to git)
+4. Add an entry to `catalog.json`'s `targets.<target>.demos[]` array
+5. Commit + push these source files to git
+6. Create a GitHub Release with tag `<demo>-v<x.y>` and attach the
+   `.elf` as an asset
+
+The website picks up the new demo on the next `catalog.json` fetch
+(no rebuild required).
+
+### Update Tier 1 setup
+
+When the FPGA design changes (new bitstream) or the OS image changes:
+
+1. Rebuild the affected asset (`.jic` for firmware, `.img.gz` for sdcard)
+2. For firmware: rebuild the bundle zip
+   ```powershell
+   $src = "nano25\setup\firmware"
+   Compress-Archive -Path "$src\golden_top_hps.jic","$src\program_qspi_flash","$src\README.md" -DestinationPath "$src\setup-firmware-vX.Y.zip"
+   ```
+3. Bump the corresponding `release_tag` in `catalog.json`
+4. Commit + push the catalog change
+5. Create a new GitHub Release with the new tag and asset
+
+If both firmware and sdcard need a coordinated update (incompatible
+versions), do them in lockstep so customers always pair matching
+versions.
+
+## Internal documentation
+
+The strategy, build pipeline, and web-designer brief live in the
+private `fusion-sdk` repository under `fusion-sdk/demo/`. They are
+not part of this public repository:
+
+- `FUSION_DEMO_STRATEGY.md` — internal strategy, hosting decisions, roadmap
+- `FUSION_DEMO_WEBDESIGN.md` — self-contained brief for the web-designer
+
+## Cross-references
+
+- Fusion SDK source : [`fusion-sdk`](https://github.com/cgx33/fusion-sdk) (private)
+- Fusion SDK packaged releases : [`fusion-release`](https://github.com/cgx33/fusion-release) (private until released)
+- Coregraphix website : [`fusion.coregraphix.com`](https://fusion.coregraphix.com)

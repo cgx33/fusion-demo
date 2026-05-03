@@ -7,13 +7,23 @@ on every power-up (AS configuration mode).
 This is a **one-time operation per board** — the bitstream stays in
 QSPI flash until reprogrammed.
 
-## What's in this folder
+## Download
 
-| File | Purpose |
-|---|---|
-| `golden_top_hps.jic` | Fusion FPGA bitstream + HPS first-stage boot ROM (~16 MB) |
-| `program_qspi_flash/flash_program.bat` | Windows batch: erase + program QSPI |
-| `program_qspi_flash/flash_erase.bat` | Windows batch: erase QSPI only |
+The firmware is distributed as a single zip bundle attached to the
+GitHub Release `setup-firmware-v0.1`:
+
+```
+setup-firmware-v0.1.zip   (~5 MB compressed)
+├── README.md                                ← this guide (offline copy)
+├── golden_top_hps.jic                       ← FPGA bitstream + HPS first-stage (~16 MB)
+└── program_qspi_flash/
+    ├── flash_program.bat                    ← Windows batch: erase + program QSPI
+    └── flash_erase.bat                      ← Windows batch: erase QSPI only
+```
+
+Extract the zip into a working folder. The relative paths between
+the `.jic` and the batch scripts must be preserved (the scripts
+reference `..\golden_top_hps.jic`).
 
 ## Prerequisites
 
@@ -32,14 +42,15 @@ QSPI flash until reprogrammed.
 3. Click **Hardware Setup** → select `DE25-Nano [USB-1]` → Close
 4. Click **Auto Detect** — the FPGA + QSPI flash chain appears
 5. Select the **QSPI** device → click **Change File** → choose
-   `golden_top_hps.jic` from this folder
+   `golden_top_hps.jic` from the extracted folder
 6. Check **Program/Configure** for the QSPI device
 7. Click **Start** — wait for "100% (Successful)"
 8. Power-cycle the board — Fusion bitstream now loads automatically
 
 ### Option B — Batch script (faster)
 
-From a Quartus shell (so `QUARTUS_ROOTDIR` is set in environment):
+From a Quartus shell (so `QUARTUS_ROOTDIR` is set in environment),
+in the extracted bundle folder:
 
 ```bat
 cd program_qspi_flash
