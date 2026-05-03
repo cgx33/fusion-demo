@@ -1,0 +1,83 @@
+# Step 2 — Flash the SD card
+
+This step writes the Linux + Fusion userspace image onto a MicroSD
+card. The Nano25's HPS (ARM cores) boots from this card.
+
+**Prerequisite**: Step 1 (firmware) must have been completed on the
+target Nano25 board, otherwise the FPGA fabric will not have the
+Fusion GPU and the userspace will fail at hardware init.
+
+## What's in this folder
+
+| File | Purpose |
+|---|---|
+| `nano25-fusion.img.gz` | Compressed Linux + Fusion image (1.4 GB compressed, ~7.5 GB uncompressed) |
+
+## Prerequisites
+
+- A MicroSD card, ≥ 8 GB
+- A MicroSD card reader/writer
+- A flashing tool:
+  - **Windows**: [Win32 Disk Imager](https://win32diskimager.org/) or [Rufus](https://rufus.ie/)
+  - **Linux/macOS**: `dd` (built-in)
+
+## Procedure
+
+### Windows — Win32 Disk Imager
+
+1. Decompress the image: `gunzip nano25-fusion.img.gz` (or right-click → 7-Zip → Extract Here)
+2. Insert the MicroSD card; note its drive letter (e.g. `E:`)
+3. Open Win32 Disk Imager
+4. Image File: select `nano25-fusion.img`
+5. Device: select your SD card drive letter — **double-check, this will erase the card**
+6. Click **Write** — wait for completion (~15 min for 7.5 GB)
+7. Eject safely
+
+### Windows — Rufus
+
+Rufus handles `.img.gz` directly without manual decompression:
+
+1. Insert the MicroSD card
+2. Open Rufus
+3. Device: your SD card
+4. Boot selection: `nano25-fusion.img.gz`
+5. Click **START**
+
+### Linux / macOS
+
+```bash
+# Identify your SD card device (verify with lsblk or diskutil)
+gunzip -c nano25-fusion.img.gz | sudo dd of=/dev/sdX bs=4M status=progress
+sync
+```
+
+Replace `/dev/sdX` with your actual SD card device path. **Verify
+this is your SD card and not your system disk** — `dd` is destructive.
+
+## Verification
+
+After flashing:
+
+1. Eject the SD card from your PC
+2. Insert it into the Nano25's MicroSD slot
+3. Connect the Nano25's HDMI to a display
+4. Power on the Nano25 (5V DC)
+5. After ~15 seconds, the Fusion demo appears on the display
+
+If LED7 flashes but the display stays blank:
+- Verify Step 1 (firmware) was completed on this board
+- Check HDMI connection / monitor input source
+
+If LED7 does not flash at all:
+- The HPS is not booting from SD — verify MSEL = AS mode
+  (see Terasic guide §5.4) and the SD is properly seated
+
+## Updating
+
+To install a new SD image version (e.g. when a new Fusion release
+ships), repeat the above procedure with the new `.img.gz`. Your
+QSPI bitstream from Step 1 stays in place and does not need
+reprogramming unless the FPGA design itself has changed.
+
+If both QSPI and SD need a coordinated update, redo Step 1 + Step 2
+in order.
